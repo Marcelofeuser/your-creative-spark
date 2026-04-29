@@ -118,29 +118,6 @@ const Onboarding = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-3">
-                <span className="h-px flex-1 bg-border" />
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">ou continuar com</span>
-                <span className="h-px flex-1 bg-border" />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { icon: Mail, label: "Google" },
-                  { icon: Apple, label: "Apple" },
-                  { icon: Mail, label: "Email" },
-                ].map((p) => (
-                  <button
-                    key={p.label}
-                    onClick={() => toast(`${p.label} (mock)`)}
-                    className="glass-card py-3 flex flex-col items-center gap-1.5 hover:border-primary/30 transition-all"
-                  >
-                    <p.icon size={16} className="text-foreground" />
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{p.label}</span>
-                  </button>
-                ))}
-              </div>
-
               <div className="flex gap-2">
                 <button onClick={back} className="flex-1 glass-card py-3 rounded-2xl text-sm">Voltar</button>
                 <button
