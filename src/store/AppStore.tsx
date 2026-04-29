@@ -1,9 +1,10 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
-import type { TripPlan, Stop, Tier, Transaction, WalletState, TripState } from "./types";
+import type { TripPlan, Stop, Tier, Transaction, WalletState, TripState, LegacyVehicle } from "./types";
 
 const TRIP_KEY = "drivervolt:trip";
 const PLANS_KEY = "drivervolt:plans";
 const WALLET_KEY = "drivervolt:wallet";
+const LEGACY_KEY = "drivervolt:legacy";
 
 const defaultStops: Stop[] = [
   { id: "s1", name: "Eletra · Posto Graal Aparecida", km: 168, power: "150kW DC", duration: "22 min", socAfter: 78 },
@@ -59,6 +60,9 @@ interface Ctx {
   addTransaction: (tx: Omit<Transaction, "id">) => void;
   topUp: (amountCents: number) => void;
   resetWallet: () => void;
+  // Legacy vehicle
+  legacy: LegacyVehicle | null;
+  setLegacy: (v: LegacyVehicle | null) => void;
 }
 
 const AppCtx = createContext<Ctx | null>(null);
@@ -75,6 +79,15 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
   const [trip, setTrip] = useState<TripState>(() => load(TRIP_KEY, defaultTrip));
   const [savedPlans, setSavedPlans] = useState<TripPlan[]>(() => load(PLANS_KEY, [] as TripPlan[]));
   const [wallet, setWallet] = useState<WalletState>(() => load(WALLET_KEY, defaultWallet));
+  const [legacy, setLegacyState] = useState<LegacyVehicle | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(LEGACY_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     localStorage.setItem(TRIP_KEY, JSON.stringify({ ...trip, savedPlans: undefined }));
@@ -85,6 +98,10 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     localStorage.setItem(WALLET_KEY, JSON.stringify(wallet));
   }, [wallet]);
+  useEffect(() => {
+    if (legacy) localStorage.setItem(LEGACY_KEY, JSON.stringify(legacy));
+    else localStorage.removeItem(LEGACY_KEY);
+  }, [legacy]);
 
   const value = useMemo<Ctx>(() => {
     const setOrigin = (v: string) => setTrip((t) => ({ ...t, origin: v }));
@@ -213,6 +230,7 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
       }));
 
     const resetWallet = () => setWallet(defaultWallet);
+    const setLegacy = (v: LegacyVehicle | null) => setLegacyState(v);
 
     return {
       trip: { ...trip, savedPlans },
@@ -232,8 +250,10 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
       addTransaction,
       topUp,
       resetWallet,
+      legacy,
+      setLegacy,
     };
-  }, [trip, savedPlans, wallet]);
+  }, [trip, savedPlans, wallet, legacy]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 };
