@@ -1,7 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Filter, Battery, Zap, Search, Navigation, X } from "lucide-react";
+import { Filter, Battery, Zap, Search, Navigation, X, Mic, MicOff } from "lucide-react";
 import { PageShell } from "@/components/drivervolt/PageShell";
+import { toast } from "sonner";
+import { useApp } from "@/store/AppStore";
 
 type Status = "available" | "occupied" | "maintenance";
 type Connector = "CCS2" | "Type 2" | "CHAdeMO";
@@ -42,11 +44,43 @@ const powerBands = [
 const statusLabel: Record<Status, string> = { available: "Disponível", occupied: "Ocupado", maintenance: "Manutenção" };
 
 const MapPage = () => {
+  const { user } = useApp();
   const [query, setQuery] = useState("");
   const [connector, setConnector] = useState<(typeof connectors)[number]>("Todos");
   const [status, setStatus] = useState<(typeof statuses)[number]>("Todos");
   const [power, setPower] = useState<(typeof powerBands)[number]["id"]>("all");
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [listening, setListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+
+  const startVoice = () => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      toast.error("Reconhecimento de voz não suportado neste navegador");
+      return;
+    }
+    if (listening) {
+      recognitionRef.current?.stop();
+      return;
+    }
+    const r = new SR();
+    r.lang = "pt-BR";
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    r.onstart = () => setListening(true);
+    r.onend = () => setListening(false);
+    r.onerror = () => {
+      setListening(false);
+      toast.error("Não foi possível reconhecer áudio");
+    };
+    r.onresult = (e: any) => {
+      const text = e.results[0][0].transcript;
+      setQuery(text);
+      toast.success(`Buscando: "${text}"`);
+    };
+    recognitionRef.current = r;
+    r.start();
+  };
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -86,6 +120,15 @@ const MapPage = () => {
         {query && (
           <button onClick={() => setQuery("")} aria-label="Limpar busca" className="text-muted-foreground hover:text-foreground">
             <X size={12} />
+          </button>
+        )}
+        {user.prefs.voiceSearch && (
+          <button
+            onClick={startVoice}
+            aria-label="Buscar por voz"
+            className={`transition-colors ${listening ? "text-destructive animate-pulse" : "text-muted-foreground hover:text-primary"}`}
+          >
+            {listening ? <MicOff size={14} /> : <Mic size={14} />}
           </button>
         )}
         <button

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Crown, Zap, Plus, ArrowUpRight, X, Sparkles } from "lucide-react";
+import { Check, Crown, Zap, Plus, ArrowUpRight, X, Sparkles, Gift, History } from "lucide-react";
 import { PageShell } from "@/components/drivervolt/PageShell";
 import { toast } from "sonner";
 import { useApp, fmtBRL, tierLabel, tierPriceCents } from "@/store/AppStore";
 import type { Tier } from "@/store/types";
+import { Link } from "react-router-dom";
 
 interface Plan {
   id: Tier;
@@ -55,6 +56,14 @@ const Wallet = () => {
   const [selected, setSelected] = useState<Tier>(wallet.currentTier);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [topUpOpen, setTopUpOpen] = useState(false);
+
+  const topUpOptions = [
+    { value: 5000, bonus: 0 },
+    { value: 10000, bonus: 500 },
+    { value: 20000, bonus: 1500 },
+    { value: 50000, bonus: 5000 },
+  ];
 
   const current = wallet.currentTier;
 
@@ -68,8 +77,17 @@ const Wallet = () => {
   };
 
   const handleTopUp = () => {
-    topUp(10000);
-    toast.success("R$ 100,00 adicionados ao saldo");
+    setTopUpOpen(true);
+  };
+
+  const confirmTopUp = (value: number, bonus: number) => {
+    topUp(value + bonus);
+    setTopUpOpen(false);
+    toast.success(
+      bonus > 0
+        ? `${fmtBRL(value)} + bônus ${fmtBRL(bonus)} creditados`
+        : `${fmtBRL(value)} adicionados ao saldo`,
+    );
   };
 
   return (
@@ -103,6 +121,23 @@ const Wallet = () => {
           </div>
         </div>
       </motion.section>
+
+      {/* Atalho para histórico de recargas */}
+      <Link
+        to="/history"
+        className="glass-card p-4 flex items-center justify-between hover:border-primary/30 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="size-10 rounded-xl bg-muted/50 border border-white/10 flex items-center justify-center">
+            <History size={14} className="text-foreground" />
+          </div>
+          <div>
+            <p className="text-sm font-medium">Histórico de recargas</p>
+            <p className="text-[10px] font-mono text-muted-foreground">Sessões e consumo detalhado</p>
+          </div>
+        </div>
+        <ArrowUpRight size={14} className="text-primary" />
+      </Link>
 
       {/* Plano atual */}
       <section className="glass-card p-5 flex items-center justify-between">
@@ -287,6 +322,58 @@ const Wallet = () => {
                   )}
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Top-up */}
+      <AnimatePresence>
+        {topUpOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => setTopUpOpen(false)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass-card w-full max-w-md p-6 space-y-4"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Recarga pré-paga</p>
+                  <h3 className="text-lg font-light mt-1">Adicionar saldo + bônus</h3>
+                </div>
+                <button onClick={() => setTopUpOpen(false)} className="text-muted-foreground hover:text-foreground">
+                  <X size={16} />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {topUpOptions.map((o) => (
+                  <button
+                    key={o.value}
+                    onClick={() => confirmTopUp(o.value, o.bonus)}
+                    className={`glass-card p-4 text-left hover:border-primary/30 transition-all ${o.bonus > 0 ? "border-primary/20" : ""}`}
+                  >
+                    <p className="text-sm font-medium font-mono">{fmtBRL(o.value)}</p>
+                    {o.bonus > 0 ? (
+                      <p className="text-[10px] font-mono text-primary uppercase tracking-wider mt-1 flex items-center gap-1">
+                        <Gift size={10} /> +{fmtBRL(o.bonus)} bônus
+                      </p>
+                    ) : (
+                      <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mt-1">Sem bônus</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground italic text-center">
+                Pagamento via Pix instantâneo (mock).
+              </p>
             </motion.div>
           </motion.div>
         )}
