@@ -48,3 +48,47 @@ export interface LegacyVehicle {
   consumption: number; // km/L
   fuelPrice: number;   // R$/L
 }
+
+export interface EVVehicle {
+  brand: string;
+  model: string;
+  year: number;
+  batteryKwh: number;
+  rangeKm: number;
+  plate: string;
+}
+
+export interface UserProfile {
+  name: string;
+  email: string;
+  phone: string;
+  vehicle: EVVehicle | null;
+  onboarded: boolean;
+  prefs: {
+    notifications: boolean;
+    voiceSearch: boolean;
+    highContrast: boolean;
+  };
+}
+
+export type NotificationType = "charge" | "maintenance" | "legal" | "system" | "promo";
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  date: string;
+  read: boolean;
+}
+
+export interface ChargeSession {
+  id: string;
+  station: string;
+  date: string;
+  durationMin: number;
+  kwh: number;
+  cost: number; // cents
+  power: string;
+  connector: string;
+}
