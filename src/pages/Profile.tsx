@@ -18,9 +18,9 @@ const Profile = () => {
     toast.success("Perfil atualizado");
   };
 
-  const handleLogout = () => {
-    logout();
-    navigate("/onboarding", { replace: true });
+  const handleLogout = async () => {
+    await logout();
+    navigate("/auth", { replace: true });
     toast("Sessão encerrada");
   };
 
