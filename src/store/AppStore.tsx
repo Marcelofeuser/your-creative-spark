@@ -379,7 +379,7 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
     const updateUser = async (patch: Partial<UserProfile>) => {
       setUser((u) => ({ ...u, ...patch }));
       if (!uid) return;
-      const dbPatch: Record<string, unknown> = {};
+      const dbPatch: { full_name?: string; phone?: string } = {};
       if (patch.name !== undefined) dbPatch.full_name = patch.name;
       if (patch.phone !== undefined) dbPatch.phone = patch.phone;
       if (Object.keys(dbPatch).length === 0) return;
