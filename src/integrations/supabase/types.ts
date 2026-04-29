@@ -14,7 +14,168 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      charge_sessions: {
+        Row: {
+          cost_cents: number
+          duration_min: number
+          ended_at: string | null
+          energy_kwh: number
+          id: string
+          power_kw: number
+          started_at: string
+          station_address: string | null
+          station_name: string
+          user_id: string
+        }
+        Insert: {
+          cost_cents?: number
+          duration_min?: number
+          ended_at?: string | null
+          energy_kwh?: number
+          id?: string
+          power_kw?: number
+          started_at?: string
+          station_address?: string | null
+          station_name: string
+          user_id: string
+        }
+        Update: {
+          cost_cents?: number
+          duration_min?: number
+          ended_at?: string | null
+          energy_kwh?: number
+          id?: string
+          power_kw?: number
+          started_at?: string
+          station_address?: string | null
+          station_name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          high_contrast: boolean
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          high_contrast?: boolean
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          high_contrast?: boolean
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          battery_kwh: number
+          brand: string
+          created_at: string
+          id: string
+          is_primary: boolean
+          model: string
+          plate: string | null
+          range_km: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          battery_kwh?: number
+          brand: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          model: string
+          plate?: string | null
+          range_km?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          battery_kwh?: number
+          brand?: string
+          created_at?: string
+          id?: string
+          is_primary?: boolean
+          model?: string
+          plate?: string | null
+          range_km?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_balances: {
+        Row: {
+          balance_cents: number
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          plan_renews_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance_cents?: number
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          plan_renews_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance_cents?: number
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          plan_renews_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          description: string
+          id: string
+          kind: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          description: string
+          id?: string
+          kind: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          description?: string
+          id?: string
+          kind?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +184,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      subscription_plan: "bronze" | "silver" | "gold"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +311,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      subscription_plan: ["bronze", "silver", "gold"],
+    },
   },
 } as const

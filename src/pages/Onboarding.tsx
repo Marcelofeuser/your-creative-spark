@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Zap, Mail, Apple, Check, Car } from "lucide-react";
+import { ArrowRight, Zap, Check, Car } from "lucide-react";
 import { useApp } from "@/store/AppStore";
 import { toast } from "sonner";
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { completeOnboarding } = useApp();
+  const { completeOnboarding, user, session } = useApp();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    name: "",
-    email: "",
+    name: user.name || "",
+    email: user.email || session?.user.email || "",
     brand: "Tesla",
     model: "Model Y",
     year: 2024,
@@ -23,12 +23,12 @@ const Onboarding = () => {
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => Math.max(0, s - 1));
 
-  const finish = () => {
+  const finish = async () => {
     if (!form.name.trim() || !form.email.trim()) {
       toast.error("Preencha nome e email");
       return;
     }
-    completeOnboarding({
+    await completeOnboarding({
       name: form.name,
       email: form.email,
       vehicle: {
@@ -116,29 +116,6 @@ const Onboarding = () => {
                   type="email"
                   className="w-full bg-muted/40 border border-border rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-primary/40"
                 />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <span className="h-px flex-1 bg-border" />
-                <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">ou continuar com</span>
-                <span className="h-px flex-1 bg-border" />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { icon: Mail, label: "Google" },
-                  { icon: Apple, label: "Apple" },
-                  { icon: Mail, label: "Email" },
-                ].map((p) => (
-                  <button
-                    key={p.label}
-                    onClick={() => toast(`${p.label} (mock)`)}
-                    className="glass-card py-3 flex flex-col items-center gap-1.5 hover:border-primary/30 transition-all"
-                  >
-                    <p.icon size={16} className="text-foreground" />
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{p.label}</span>
-                  </button>
-                ))}
               </div>
 
               <div className="flex gap-2">

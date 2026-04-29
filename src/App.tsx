@@ -15,12 +15,25 @@ import Cockpit from "./pages/Cockpit.tsx";
 import PlusClub from "./pages/PlusClub.tsx";
 import Innovations from "./pages/Innovations.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
+import Auth from "./pages/Auth.tsx";
 import Profile from "./pages/Profile.tsx";
 import History from "./pages/History.tsx";
 import Support from "./pages/Support.tsx";
 import { AppStoreProvider, useApp } from "./store/AppStore";
 
 const queryClient = new QueryClient();
+
+const RequireAuth = ({ children }: { children: ReactNode }) => {
+  const { session, loadingSession } = useApp();
+  const location = useLocation();
+  if (loadingSession) {
+    return <div className="min-h-dvh flex items-center justify-center text-xs font-mono text-muted-foreground">Carregando…</div>;
+  }
+  if (!session) {
+    return <Navigate to="/auth" replace state={{ from: location }} />;
+  }
+  return <>{children}</>;
+};
 
 const RequireOnboarding = ({ children }: { children: ReactNode }) => {
   const { user } = useApp();
@@ -39,19 +52,20 @@ const App = () => (
       <AppStoreProvider>
         <BrowserRouter>
           <Routes>
+            <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<Onboarding />} />
-            <Route path="/" element={<RequireOnboarding><Index /></RequireOnboarding>} />
-            <Route path="/wallet" element={<RequireOnboarding><Wallet /></RequireOnboarding>} />
-            <Route path="/trip" element={<RequireOnboarding><TripPlanner /></RequireOnboarding>} />
-            <Route path="/map" element={<RequireOnboarding><MapPage /></RequireOnboarding>} />
-            <Route path="/eco" element={<RequireOnboarding><EcoCalculator /></RequireOnboarding>} />
-            <Route path="/charge" element={<RequireOnboarding><Charge /></RequireOnboarding>} />
-            <Route path="/cockpit" element={<RequireOnboarding><Cockpit /></RequireOnboarding>} />
-            <Route path="/plus" element={<RequireOnboarding><PlusClub /></RequireOnboarding>} />
-            <Route path="/innovations" element={<RequireOnboarding><Innovations /></RequireOnboarding>} />
-            <Route path="/profile" element={<RequireOnboarding><Profile /></RequireOnboarding>} />
-            <Route path="/history" element={<RequireOnboarding><History /></RequireOnboarding>} />
-            <Route path="/support" element={<RequireOnboarding><Support /></RequireOnboarding>} />
+            <Route path="/" element={<RequireAuth><RequireOnboarding><Index /></RequireOnboarding></RequireAuth>} />
+            <Route path="/wallet" element={<RequireAuth><RequireOnboarding><Wallet /></RequireOnboarding></RequireAuth>} />
+            <Route path="/trip" element={<RequireAuth><RequireOnboarding><TripPlanner /></RequireOnboarding></RequireAuth>} />
+            <Route path="/map" element={<RequireAuth><RequireOnboarding><MapPage /></RequireOnboarding></RequireAuth>} />
+            <Route path="/eco" element={<RequireAuth><RequireOnboarding><EcoCalculator /></RequireOnboarding></RequireAuth>} />
+            <Route path="/charge" element={<RequireAuth><RequireOnboarding><Charge /></RequireOnboarding></RequireAuth>} />
+            <Route path="/cockpit" element={<RequireAuth><RequireOnboarding><Cockpit /></RequireOnboarding></RequireAuth>} />
+            <Route path="/plus" element={<RequireAuth><RequireOnboarding><PlusClub /></RequireOnboarding></RequireAuth>} />
+            <Route path="/innovations" element={<RequireAuth><RequireOnboarding><Innovations /></RequireOnboarding></RequireAuth>} />
+            <Route path="/profile" element={<RequireAuth><RequireOnboarding><Profile /></RequireOnboarding></RequireAuth>} />
+            <Route path="/history" element={<RequireAuth><RequireOnboarding><History /></RequireOnboarding></RequireAuth>} />
+            <Route path="/support" element={<RequireAuth><RequireOnboarding><Support /></RequireOnboarding></RequireAuth>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
