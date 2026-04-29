@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Check, Crown, Zap, Plus, ArrowUpRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Check, Crown, Zap, Plus, ArrowUpRight, X, Sparkles } from "lucide-react";
 import { PageShell } from "@/components/drivervolt/PageShell";
 import { toast } from "sonner";
-
-type Tier = "bronze" | "silver" | "gold";
+import { useApp, fmtBRL, tierLabel, tierPriceCents } from "@/store/AppStore";
+import type { Tier } from "@/store/types";
 
 interface Plan {
   id: Tier;
@@ -26,12 +26,7 @@ const plans: Plan[] = [
     accent: "from-amber-700/40 to-amber-900/20",
     border: "border-amber-600/30",
     cashback: "0%",
-    features: [
-      "Acesso ao Smart Map",
-      "Pagamento via QR Code",
-      "Calculadora Verde básica",
-      "Suporte por chat (48h)",
-    ],
+    features: ["Acesso ao Smart Map", "Pagamento via QR Code", "Calculadora Verde básica", "Suporte por chat (48h)"],
   },
   {
     id: "silver",
@@ -41,13 +36,7 @@ const plans: Plan[] = [
     accent: "from-zinc-300/30 to-zinc-500/10",
     border: "border-zinc-300/40",
     cashback: "5%",
-    features: [
-      "Tudo do Bronze",
-      "5% cashback em recargas",
-      "Trip Planner avançado",
-      "TAG RFID inclusa",
-      "Prioridade em filas",
-    ],
+    features: ["Tudo do Bronze", "5% cashback em recargas", "Trip Planner avançado", "TAG RFID inclusa", "Prioridade em filas"],
   },
   {
     id: "gold",
@@ -57,35 +46,30 @@ const plans: Plan[] = [
     accent: "from-primary/30 to-secondary/10",
     border: "border-primary/40",
     cashback: "12%",
-    features: [
-      "Tudo do Silver",
-      "12% cashback em recargas",
-      "Rescue Move ilimitado",
-      "Acesso DriverVolt Plus Club",
-      "Suporte 24/7 dedicado",
-      "Smart Grid Integration",
-    ],
+    features: ["Tudo do Silver", "12% cashback em recargas", "Rescue Move ilimitado", "Acesso DriverVolt Plus Club", "Suporte 24/7", "Smart Grid Integration"],
   },
 ];
 
-const transactions = [
-  { id: "1", title: "Recarga · Verdant Point", date: "Hoje · 14:32", value: "-R$ 48,20", sign: "out" as const },
-  { id: "2", title: "Cashback Silver", date: "Ontem · 18:11", value: "+R$ 2,41", sign: "in" as const },
-  { id: "3", title: "Recarga DC · Eletra Ibirapuera", date: "26 abr · 09:48", value: "-R$ 72,90", sign: "out" as const },
-  { id: "4", title: "Top-up carteira", date: "24 abr · 21:02", value: "+R$ 200,00", sign: "in" as const },
-];
-
 const Wallet = () => {
-  const [current, setCurrent] = useState<Tier>("silver");
-  const [selected, setSelected] = useState<Tier>("gold");
+  const { wallet, upgradeTier, topUp } = useApp();
+  const [selected, setSelected] = useState<Tier>(wallet.currentTier);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [processing, setProcessing] = useState(false);
 
-  const handleUpgrade = () => {
-    if (selected === current) {
-      toast("Você já está neste plano.");
-      return;
-    }
-    setCurrent(selected);
-    toast.success(`Plano atualizado para ${plans.find((p) => p.id === selected)?.name} ✨`);
+  const current = wallet.currentTier;
+
+  const handleConfirm = async () => {
+    setProcessing(true);
+    await new Promise((r) => setTimeout(r, 700));
+    upgradeTier(selected);
+    setProcessing(false);
+    setConfirmOpen(false);
+    toast.success(`Plano atualizado para ${tierLabel[selected]} ✨`);
+  };
+
+  const handleTopUp = () => {
+    topUp(10000);
+    toast.success("R$ 100,00 adicionados ao saldo");
   };
 
   return (
@@ -99,15 +83,18 @@ const Wallet = () => {
       >
         <div className="absolute inset-0 bg-gradient-bloom opacity-50" aria-hidden />
         <div className="relative">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-mono">
-            Saldo pré-pago
-          </p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-mono">Saldo pré-pago</p>
           <div className="flex items-baseline gap-2 mt-1">
-            <span className="text-4xl font-light text-foreground neon-glow tabular-nums">R$ 482</span>
-            <span className="text-xl font-light text-primary">,30</span>
+            <span className="text-4xl font-light text-foreground neon-glow tabular-nums">
+              {fmtBRL(wallet.balance).split(",")[0]}
+            </span>
+            <span className="text-xl font-light text-primary">,{fmtBRL(wallet.balance).split(",")[1]}</span>
           </div>
           <div className="flex gap-2 mt-5">
-            <button className="flex-1 bg-gradient-aurora text-primary-foreground py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:shadow-bloom transition-shadow">
+            <button
+              onClick={handleTopUp}
+              className="flex-1 bg-gradient-aurora text-primary-foreground py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:shadow-bloom transition-shadow"
+            >
               <Plus size={14} strokeWidth={2.5} /> Adicionar saldo
             </button>
             <button className="px-4 glass-card rounded-2xl flex items-center justify-center text-sm hover:border-primary/30 transition-colors">
@@ -124,12 +111,8 @@ const Wallet = () => {
             <Crown size={16} className="text-primary-foreground" />
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">
-              Plano atual
-            </p>
-            <p className="text-base font-medium text-foreground">
-              {plans.find((p) => p.id === current)?.name}
-            </p>
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Plano atual</p>
+            <p className="text-base font-medium text-foreground">{tierLabel[current]}</p>
           </div>
         </div>
         <span className="text-xs text-primary font-mono">
@@ -158,7 +141,7 @@ const Wallet = () => {
                 }`}
                 aria-pressed={isSelected}
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${plan.accent} opacity-${isSelected ? "100" : "30"} transition-opacity`} aria-hidden />
+                <div className={`absolute inset-0 bg-gradient-to-br ${plan.accent} ${isSelected ? "opacity-100" : "opacity-30"} transition-opacity`} aria-hidden />
                 <div className="relative">
                   <div className="flex items-start justify-between">
                     <div>
@@ -179,7 +162,6 @@ const Wallet = () => {
                       </p>
                     </div>
                   </div>
-
                   <ul className="mt-4 space-y-2">
                     {plan.features.map((f) => (
                       <li key={f} className="flex items-center gap-2 text-xs text-foreground/85">
@@ -195,12 +177,12 @@ const Wallet = () => {
         </div>
 
         <button
-          onClick={handleUpgrade}
+          onClick={() => setConfirmOpen(true)}
           disabled={selected === current}
           className="w-full bg-gradient-aurora text-primary-foreground py-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-bloom transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Zap size={14} strokeWidth={2.5} />
-          {selected === current ? "Plano selecionado" : `Fazer upgrade para ${plans.find((p) => p.id === selected)?.name}`}
+          {selected === current ? "Plano selecionado" : `Fazer upgrade para ${tierLabel[selected]}`}
         </button>
       </section>
 
@@ -209,24 +191,106 @@ const Wallet = () => {
         <h2 id="tx-heading" className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground px-1">
           Movimentações recentes
         </h2>
-        <div className="glass-card divide-y divide-border/50 overflow-hidden">
-          {transactions.map((tx) => (
-            <div key={tx.id} className="flex items-center justify-between p-4">
-              <div>
-                <p className="text-sm text-foreground">{tx.title}</p>
-                <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{tx.date}</p>
+        {wallet.transactions.length === 0 ? (
+          <div className="glass-card p-8 text-center text-sm text-muted-foreground">
+            <Sparkles size={20} className="mx-auto text-primary/50 mb-2" />
+            Nenhuma movimentação ainda.
+          </div>
+        ) : (
+          <div className="glass-card divide-y divide-border/50 overflow-hidden">
+            {wallet.transactions.slice(0, 8).map((tx) => (
+              <div key={tx.id} className="flex items-center justify-between p-4">
+                <div>
+                  <p className="text-sm text-foreground">{tx.title}</p>
+                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{tx.date}</p>
+                </div>
+                <span
+                  className={`text-sm font-mono tabular-nums ${
+                    tx.sign === "in" ? "text-primary" : "text-foreground/80"
+                  }`}
+                >
+                  {tx.value}
+                </span>
               </div>
-              <span
-                className={`text-sm font-mono tabular-nums ${
-                  tx.sign === "in" ? "text-primary" : "text-foreground/80"
-                }`}
-              >
-                {tx.value}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
+
+      {/* Modal Confirmação */}
+      <AnimatePresence>
+        {confirmOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+            onClick={() => !processing && setConfirmOpen(false)}
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass-card w-full max-w-md p-6 space-y-5"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Confirmar upgrade</p>
+                  <h3 className="text-xl font-light text-foreground mt-1">
+                    {tierLabel[current]} → <span className="text-primary font-semibold">{tierLabel[selected]}</span>
+                  </h3>
+                </div>
+                <button onClick={() => setConfirmOpen(false)} disabled={processing} className="text-muted-foreground hover:text-foreground">
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="glass-card p-4 space-y-2 border-primary/20">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Cobrança imediata</span>
+                  <span className="font-mono text-foreground">{fmtBRL(tierPriceCents[selected])}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Saldo após</span>
+                  <span className="font-mono text-primary">
+                    {fmtBRL(Math.max(0, wallet.balance - tierPriceCents[selected]))}
+                  </span>
+                </div>
+              </div>
+
+              {wallet.balance < tierPriceCents[selected] && (
+                <p className="text-xs text-destructive">Saldo insuficiente. Adicione crédito antes de continuar.</p>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setConfirmOpen(false)}
+                  disabled={processing}
+                  className="flex-1 glass-card py-3 rounded-2xl text-sm hover:border-white/20"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  disabled={processing || wallet.balance < tierPriceCents[selected]}
+                  className="flex-1 bg-gradient-aurora text-primary-foreground py-3 rounded-2xl text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+                >
+                  {processing ? (
+                    <span className="size-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
+                  ) : (
+                    <>
+                      <Zap size={14} strokeWidth={2.5} /> Confirmar
+                    </>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </PageShell>
   );
 };

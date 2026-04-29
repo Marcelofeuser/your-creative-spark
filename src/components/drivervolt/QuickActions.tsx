@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
-import { Zap, Route, Wallet } from "lucide-react";
+import { Zap, Route, Leaf } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const actions = [
-  { icon: Zap, label: "Energia", to: "/charge", accent: "text-primary" },
+  { icon: Zap, label: "Energia", to: "/map", accent: "text-primary" },
   { icon: Route, label: "Rotas", to: "/trip", accent: "text-secondary" },
-  { icon: Wallet, label: "Carteira", to: "/wallet", accent: "text-foreground" },
+  { icon: Leaf, label: "Eco", to: "/eco", accent: "text-secondary" },
 ];
 
 export const QuickActions = () => (
