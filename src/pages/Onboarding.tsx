@@ -1,17 +1,17 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, Zap, Mail, Apple, Check, Car } from "lucide-react";
+import { ArrowRight, Zap, Check, Car } from "lucide-react";
 import { useApp } from "@/store/AppStore";
 import { toast } from "sonner";
 
 const Onboarding = () => {
   const navigate = useNavigate();
-  const { completeOnboarding } = useApp();
+  const { completeOnboarding, user, session } = useApp();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    name: "",
-    email: "",
+    name: user.name || "",
+    email: user.email || session?.user.email || "",
     brand: "Tesla",
     model: "Model Y",
     year: 2024,
@@ -23,12 +23,12 @@ const Onboarding = () => {
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => Math.max(0, s - 1));
 
-  const finish = () => {
+  const finish = async () => {
     if (!form.name.trim() || !form.email.trim()) {
       toast.error("Preencha nome e email");
       return;
     }
-    completeOnboarding({
+    await completeOnboarding({
       name: form.name,
       email: form.email,
       vehicle: {
