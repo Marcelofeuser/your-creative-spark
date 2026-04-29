@@ -1,16 +1,26 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { Header } from "@/components/drivervolt/Header";
+import { SocVisualizer } from "@/components/drivervolt/SocVisualizer";
+import { QuickActions } from "@/components/drivervolt/QuickActions";
+import { NearbyStations } from "@/components/drivervolt/NearbyStations";
+import { EcoImpact } from "@/components/drivervolt/EcoImpact";
+import { BottomNav } from "@/components/drivervolt/BottomNav";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
-    </div>
+    <main className="min-h-dvh w-full pb-32 pt-6 px-5 sm:px-8 flex flex-col items-center">
+      <div className="w-full max-w-md flex flex-col gap-6">
+        <Header />
+        <SocVisualizer percent={84} rangeKm={382} />
+        <QuickActions />
+        <NearbyStations />
+        <EcoImpact />
+        <p className="text-center text-[10px] text-muted-foreground/60 font-mono uppercase tracking-[0.3em] pt-2">
+          DriverVolt · v1.0 · BR
+        </p>
+      </div>
+      <BottomNav />
+    </main>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
