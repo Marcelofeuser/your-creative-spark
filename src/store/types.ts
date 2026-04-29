@@ -40,3 +40,11 @@ export interface TripState {
   stops: Stop[];
   savedPlans: TripPlan[];
 }
+
+export interface LegacyVehicle {
+  brand: string;
+  model: string;
+  year: number;
+  consumption: number; // km/L
+  fuelPrice: number;   // R$/L
+}

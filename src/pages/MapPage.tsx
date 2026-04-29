@@ -313,15 +313,23 @@ const MapPage = () => {
             </div>
 
             <div className="flex gap-2 mt-4">
-              <button
-                disabled={selected.status === "maintenance"}
-                className="flex-1 bg-gradient-aurora text-primary-foreground py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:shadow-bloom transition-shadow disabled:opacity-40"
+              <a
+                href={`https://waze.com/ul?q=${encodeURIComponent(selected.address)}&navigate=yes`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-disabled={selected.status === "maintenance"}
+                className={`flex-1 bg-gradient-aurora text-primary-foreground py-3 rounded-2xl text-sm font-semibold flex items-center justify-center gap-2 hover:shadow-bloom transition-shadow ${selected.status === "maintenance" ? "opacity-40 pointer-events-none" : ""}`}
               >
-                <Navigation size={14} strokeWidth={2.5} /> Navegar
-              </button>
-              <button className="px-4 glass-card rounded-2xl flex items-center justify-center hover:border-primary/30 transition-colors">
+                <Navigation size={14} strokeWidth={2.5} /> Waze
+              </a>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(selected.address)}&travelmode=driving`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 glass-card rounded-2xl flex items-center justify-center hover:border-primary/30 transition-colors"
+              >
                 <Battery size={16} className="text-primary" />
-              </button>
+              </a>
             </div>
           </motion.section>
         ) : (

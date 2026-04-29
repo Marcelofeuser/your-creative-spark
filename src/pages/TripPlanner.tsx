@@ -317,9 +317,24 @@ const TripPlanner = () => {
               </div>
             </div>
 
-            <button className="w-full glass-card py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 hover:border-primary/30 transition-colors">
-              <Navigation size={14} className="text-primary" /> Iniciar navegação no Waze
-            </button>
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href={`https://waze.com/ul?q=${encodeURIComponent(trip.destination)}&navigate=yes`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="glass-card py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 hover:border-primary/30 transition-colors"
+              >
+                <Navigation size={14} className="text-primary" /> Waze
+              </a>
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(trip.origin)}&destination=${encodeURIComponent(trip.destination)}&travelmode=driving`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="glass-card py-3 rounded-2xl text-sm font-medium flex items-center justify-center gap-2 hover:border-primary/30 transition-colors"
+              >
+                <Navigation size={14} className="text-secondary" /> Google Maps
+              </a>
+            </div>
           </section>
         </>
       )}
