@@ -133,3 +133,14 @@
     font-family: var(--font-mono);
   }
 }
+
+/* High contrast veicular: aumenta contraste e fontes para uso em suporte automotivo */
+.high-contrast {
+  --foreground: 0 0% 100%;
+  --muted-foreground: 0 0% 80%;
+  --border: 169 100% 50%;
+  --primary-glow: 169 100% 75%;
+}
+.high-contrast body {
+  font-size: 17px;
+}
