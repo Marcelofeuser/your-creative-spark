@@ -1,10 +1,11 @@
-import { Home, Map, Sparkles, Wallet } from "lucide-react";
+import { Home, Map, Sparkles, Wallet, Leaf } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const items = [
   { to: "/", icon: Home, label: "Home" },
   { to: "/map", icon: Map, label: "Mapa" },
   { to: "/trip", icon: Sparkles, label: "Rota" },
+  { to: "/eco", icon: Leaf, label: "Eco" },
   { to: "/wallet", icon: Wallet, label: "Carteira" },
 ];
 
