@@ -5,6 +5,7 @@ import { Zap, Mail, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
+import { DEMO_EMAIL, DEMO_PASSWORD, DEMO_NAME } from "@/config/demo";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ const Auth = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -59,6 +62,40 @@ const Auth = () => {
     });
     if (result.error) {
       toast.error("Não foi possível entrar com Google");
+      setLoading(false);
+    }
+  };
+
+  const handleForgot = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotEmail) return toast.error("Informe seu email");
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Enviamos um link de recuperação para seu email");
+    setForgotOpen(false);
+  };
+
+  const handleDemo = async () => {
+    setLoading(true);
+    try {
+      // Garante que o usuário demo existe (idempotente)
+      await supabase.functions.invoke("seed-demo-user", {
+        body: { email: DEMO_EMAIL, password: DEMO_PASSWORD, full_name: DEMO_NAME },
+      });
+      const { error } = await supabase.auth.signInWithPassword({
+        email: DEMO_EMAIL,
+        password: DEMO_PASSWORD,
+      });
+      if (error) throw error;
+      toast.success("Entrando como demo ⚡");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Falha ao entrar como demo";
+      toast.error(msg);
+    } finally {
       setLoading(false);
     }
   };
@@ -142,6 +179,52 @@ const Auth = () => {
           {mode === "signin"
             ? "Não tem conta? Cadastre-se"
             : "Já tem conta? Entrar"}
+        </button>
+
+        {mode === "signin" && (
+          <button
+            onClick={() => {
+              setForgotEmail(email);
+              setForgotOpen((v) => !v);
+            }}
+            className="text-xs text-muted-foreground hover:text-primary transition-colors text-center -mt-3"
+          >
+            Esqueci minha senha
+          </button>
+        )}
+
+        {forgotOpen && (
+          <form onSubmit={handleForgot} className="space-y-3 glass-card p-4 rounded-2xl">
+            <p className="text-xs text-muted-foreground">
+              Enviaremos um link para redefinir sua senha.
+            </p>
+            <input
+              value={forgotEmail}
+              onChange={(e) => setForgotEmail(e.target.value)}
+              placeholder="email@dominio.com"
+              type="email"
+              required
+              className="w-full bg-muted/40 border border-border rounded-2xl px-4 py-3 text-sm focus:outline-none focus:border-primary/40"
+            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-primary/90 text-primary-foreground py-3 rounded-2xl font-semibold text-sm disabled:opacity-50"
+            >
+              {loading ? "Enviando..." : "Enviar link de recuperação"}
+            </button>
+          </form>
+        )}
+
+        <button
+          onClick={handleDemo}
+          disabled={loading}
+          className="w-full glass-card py-3 flex flex-col items-center justify-center gap-0.5 hover:border-primary/30 transition-all disabled:opacity-50"
+        >
+          <span className="text-sm">Entrar como demo</span>
+          <span className="text-[10px] font-mono text-muted-foreground">
+            {DEMO_EMAIL} · {DEMO_PASSWORD}
+          </span>
         </button>
       </motion.div>
     </main>
