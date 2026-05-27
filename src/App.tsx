@@ -16,6 +16,7 @@ import PlusClub from "./pages/PlusClub.tsx";
 import Innovations from "./pages/Innovations.tsx";
 import Onboarding from "./pages/Onboarding.tsx";
 import Auth from "./pages/Auth.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import Profile from "./pages/Profile.tsx";
 import History from "./pages/History.tsx";
 import Support from "./pages/Support.tsx";
@@ -53,6 +54,7 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<Onboarding />} />
             <Route path="/" element={<RequireAuth><RequireOnboarding><Index /></RequireOnboarding></RequireAuth>} />
             <Route path="/wallet" element={<RequireAuth><RequireOnboarding><Wallet /></RequireOnboarding></RequireAuth>} />
