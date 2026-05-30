@@ -56,6 +56,7 @@ interface Ctx {
   // Auth
   session: Session | null;
   loadingSession: boolean;
+  hydrating: boolean;
   signOut: () => Promise<void>;
   // Trip
   trip: TripState;
