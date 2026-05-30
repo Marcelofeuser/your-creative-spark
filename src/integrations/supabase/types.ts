@@ -156,6 +156,9 @@ export type Database = {
           description: string
           id: string
           kind: string
+          status: string
+          stripe_session_id: string | null
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -164,6 +167,9 @@ export type Database = {
           description: string
           id?: string
           kind: string
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -172,6 +178,9 @@ export type Database = {
           description?: string
           id?: string
           kind?: string
+          status?: string
+          stripe_session_id?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
