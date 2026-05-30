@@ -62,26 +62,56 @@ Deno.serve(async (req) => {
         const priceId = s.metadata?.priceId;
         if (!userId || !priceId) break;
 
-        // Wallet topup
-        const amount = TOPUP_AMOUNTS[priceId];
-        if (amount && s.mode === "payment" && s.payment_status === "paid") {
-          const { data: bal } = await db
-            .from("wallet_balances")
-            .select("balance_cents")
-            .eq("user_id", userId)
+        const isTopup = s.mode === "payment";
+        const isPaid = s.payment_status === "paid";
+
+        // Confirma ou cria a movimentação correspondente
+        if (isPaid) {
+          const { data: updated } = await db
+            .from("wallet_transactions")
+            .update({ status: "confirmed" })
+            .eq("stripe_session_id", s.id)
+            .select("id, amount_cents, kind")
             .maybeSingle();
-          const current = bal?.balance_cents ?? 0;
-          await db
-            .from("wallet_balances")
-            .update({ balance_cents: current + amount })
-            .eq("user_id", userId);
-          await db.from("wallet_transactions").insert({
-            user_id: userId,
-            kind: "topup",
-            description: `Recarga via Stripe (R$ ${(amount / 100).toFixed(2)})`,
-            amount_cents: amount,
-          });
+
+          // Para topups: incrementa o saldo (idempotente: só se a tx existia como pendente)
+          if (isTopup && updated) {
+            const amount = Math.abs(updated.amount_cents);
+            const { data: bal } = await db
+              .from("wallet_balances")
+              .select("balance_cents").eq("user_id", userId).maybeSingle();
+            await db.from("wallet_balances")
+              .update({ balance_cents: (bal?.balance_cents ?? 0) + amount })
+              .eq("user_id", userId);
+          } else if (isTopup && !updated) {
+            // Fallback: webhook chegou sem registro pendente (ex.: sessão antiga)
+            const amount = TOPUP_AMOUNTS[priceId];
+            if (amount) {
+              const { data: bal } = await db
+                .from("wallet_balances")
+                .select("balance_cents").eq("user_id", userId).maybeSingle();
+              await db.from("wallet_balances")
+                .update({ balance_cents: (bal?.balance_cents ?? 0) + amount })
+                .eq("user_id", userId);
+              await db.from("wallet_transactions").insert({
+                user_id: userId,
+                kind: "topup",
+                description: `Recarga via Stripe`,
+                amount_cents: amount,
+                status: "confirmed",
+                stripe_session_id: s.id,
+              });
+            }
+          }
         }
+        break;
+      }
+      case "checkout.session.expired":
+      case "checkout.session.async_payment_failed": {
+        const s = event.data.object as any;
+        await db.from("wallet_transactions")
+          .update({ status: "failed" })
+          .eq("stripe_session_id", s.id);
         break;
       }
       case "customer.subscription.created":
