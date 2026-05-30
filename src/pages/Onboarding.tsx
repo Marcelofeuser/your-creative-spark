@@ -1,24 +1,60 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, Zap, Check, Car } from "lucide-react";
 import { useApp } from "@/store/AppStore";
 import { toast } from "sonner";
 
+const STORAGE_KEY = "drivervolt:onboarding";
+
+type OnboardingForm = {
+  name: string;
+  email: string;
+  brand: string;
+  model: string;
+  year: number;
+  batteryKwh: number;
+  rangeKm: number;
+  plate: string;
+};
+
 const Onboarding = () => {
   const navigate = useNavigate();
   const { completeOnboarding, user, session } = useApp();
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState({
-    name: user.name || "",
-    email: user.email || session?.user.email || "",
-    brand: "Tesla",
-    model: "Model Y",
-    year: 2024,
-    batteryKwh: 75,
-    rangeKm: 460,
-    plate: "",
+  const [step, setStep] = useState<number>(() => {
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw).step ?? 0;
+    } catch { /* noop */ }
+    return 0;
   });
+  const [form, setForm] = useState<OnboardingForm>(() => {
+    const defaults: OnboardingForm = {
+      name: user.name || "",
+      email: user.email || session?.user.email || "",
+      brand: "Tesla",
+      model: "Model Y",
+      year: 2024,
+      batteryKwh: 75,
+      rangeKm: 460,
+      plate: "",
+    };
+    try {
+      const raw = sessionStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        return { ...defaults, ...(parsed.form ?? {}) };
+      }
+    } catch { /* noop */ }
+    return defaults;
+  });
+
+  // Persiste cada mudança para sobreviver a reloads / navegação direta
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ step, form }));
+    } catch { /* noop */ }
+  }, [step, form]);
 
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => Math.max(0, s - 1));
@@ -40,6 +76,7 @@ const Onboarding = () => {
         plate: form.plate,
       },
     });
+    try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* noop */ }
     toast.success(`Bem-vindo, ${form.name.split(" ")[0]} ⚡`);
     navigate("/", { replace: true });
   };
