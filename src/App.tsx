@@ -37,8 +37,13 @@ const RequireAuth = ({ children }: { children: ReactNode }) => {
 };
 
 const RequireOnboarding = ({ children }: { children: ReactNode }) => {
-  const { user } = useApp();
+  const { user, hydrating, session } = useApp();
   const location = useLocation();
+  // Aguarda hidratação do servidor antes de decidir, para não redirecionar
+  // incorretamente em reload de rota direta.
+  if (session && hydrating) {
+    return <div className="min-h-dvh flex items-center justify-center text-xs font-mono text-muted-foreground">Carregando perfil…</div>;
+  }
   if (!user.onboarded && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
