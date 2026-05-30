@@ -19,12 +19,18 @@ export interface TripPlan {
 
 export type Tier = "bronze" | "silver" | "gold";
 
+export type TxStatus = "pending" | "confirmed" | "failed";
+export type TxKind = "topup" | "subscription" | "charge" | "upgrade" | "refund" | "other";
+
 export interface Transaction {
   id: string;
   title: string;
   date: string;
+  rawDate?: string; // ISO original — para ordenação/agrupamento
   value: string;
   sign: "in" | "out";
+  status?: TxStatus;
+  kind?: TxKind;
 }
 
 export interface WalletState {
