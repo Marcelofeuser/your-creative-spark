@@ -21,6 +21,7 @@ import Profile from "./pages/Profile.tsx";
 import History from "./pages/History.tsx";
 import Support from "./pages/Support.tsx";
 import OcppSimulator from "./pages/OcppSimulator.tsx";
+import SmartcarCallback from "./pages/SmartcarCallback.tsx";
 import { AppStoreProvider, useApp } from "./store/AppStore";
 
 const queryClient = new QueryClient();
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/history" element={<RequireAuth><RequireOnboarding><History /></RequireOnboarding></RequireAuth>} />
             <Route path="/support" element={<RequireAuth><RequireOnboarding><Support /></RequireOnboarding></RequireAuth>} />
             <Route path="/ocpp" element={<RequireAuth><RequireOnboarding><OcppSimulator /></RequireOnboarding></RequireAuth>} />
+            <Route path="/smartcar/callback" element={<RequireAuth><SmartcarCallback /></RequireAuth>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
