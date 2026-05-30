@@ -101,14 +101,12 @@ Deno.serve(async (req) => {
       ? await resolveOrCreateCustomer(stripe, { email: userEmail, userId })
       : undefined;
 
-    let productDescription: string | undefined;
-    if (!isRecurring) {
-      const productId = typeof stripePrice.product === "string"
-        ? stripePrice.product
-        : stripePrice.product.id;
-      const product = await stripe.products.retrieve(productId);
-      productDescription = product.name;
-    }
+    const productId = typeof stripePrice.product === "string"
+      ? stripePrice.product
+      : stripePrice.product.id;
+    const product = await stripe.products.retrieve(productId);
+    const productName = product.name;
+    const productDescription = isRecurring ? undefined : productName;
 
     const session = await stripe.checkout.sessions.create({
       line_items: [{ price: stripePrice.id, quantity: 1 }],
@@ -127,6 +125,32 @@ Deno.serve(async (req) => {
         ...(isRecurring && { subscription_data: { metadata: { userId, priceId } } }),
       }),
     });
+
+    // Registra movimentação como pendente — o webhook confirma após pagamento
+    if (userId && authHeader) {
+      try {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL")!,
+          Deno.env.get("SUPABASE_ANON_KEY")!,
+          { global: { headers: { Authorization: authHeader } } },
+        );
+        const unitAmount = stripePrice.unit_amount ?? 0;
+        const amountCents = isRecurring ? -unitAmount : unitAmount;
+        const description = isRecurring
+          ? `Assinatura ${productName}`
+          : `Recarga · ${productName}`;
+        await supabase.from("wallet_transactions").insert({
+          user_id: userId,
+          kind: isRecurring ? "subscription" : "topup",
+          description,
+          amount_cents: amountCents,
+          status: "pending",
+          stripe_session_id: session.id,
+        });
+      } catch (insertErr) {
+        console.error("Failed to record pending tx", insertErr);
+      }
+    }
 
     return new Response(JSON.stringify({ clientSecret: session.client_secret }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
