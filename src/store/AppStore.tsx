@@ -199,8 +199,11 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
         id: t.id,
         title: t.description,
         date: fmtDateBR(t.created_at),
+        rawDate: t.created_at,
         value: `${t.amount_cents >= 0 ? "+" : "-"}${fmtBRL(Math.abs(t.amount_cents))}`,
         sign: t.amount_cents >= 0 ? "in" : "out",
+        status: (t.status as "pending" | "confirmed" | "failed" | null) ?? "confirmed",
+        kind: (t.kind as any) ?? "other",
       })),
     });
 
@@ -333,9 +336,9 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
         currentTier: tier,
         balance: newBalance,
         transactions: tx ? [{
-          id: tx.id, title: tx.description, date: fmtDateBR(tx.created_at),
+          id: tx.id, title: tx.description, date: fmtDateBR(tx.created_at), rawDate: tx.created_at,
           value: `${tx.amount_cents >= 0 ? "+" : "-"}${fmtBRL(Math.abs(tx.amount_cents))}`,
-          sign: tx.amount_cents >= 0 ? "in" : "out",
+          sign: tx.amount_cents >= 0 ? "in" : "out", status: "confirmed", kind: "upgrade",
         }, ...w.transactions] : w.transactions,
       }));
     };
@@ -352,8 +355,8 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
         setWallet((w) => ({
           ...w,
           transactions: [{
-            id: row.id, title: row.description, date: fmtDateBR(row.created_at),
-            value: tx.value, sign: tx.sign,
+            id: row.id, title: row.description, date: fmtDateBR(row.created_at), rawDate: row.created_at,
+            value: tx.value, sign: tx.sign, status: "confirmed", kind: tx.sign === "out" ? "charge" : "topup",
           }, ...w.transactions],
         }));
       }
@@ -373,8 +376,8 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
       setWallet((w) => ({
         ...w, balance: newBalance,
         transactions: row ? [{
-          id: row.id, title: row.description, date: fmtDateBR(row.created_at),
-          value: `+${fmtBRL(amountCents)}`, sign: "in",
+          id: row.id, title: row.description, date: fmtDateBR(row.created_at), rawDate: row.created_at,
+          value: `+${fmtBRL(amountCents)}`, sign: "in", status: "confirmed", kind: "topup",
         }, ...w.transactions] : w.transactions,
       }));
     };
