@@ -56,6 +56,7 @@ interface Ctx {
   // Auth
   session: Session | null;
   loadingSession: boolean;
+  hydrating: boolean;
   signOut: () => Promise<void>;
   // Trip
   trip: TripState;
@@ -118,6 +119,7 @@ function fmtDateBR(iso: string) {
 export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
+  const [hydrating, setHydrating] = useState(false);
 
   const [trip, setTrip] = useState<TripState>(() => load(TRIP_KEY, defaultTrip));
   const [savedPlans, setSavedPlans] = useState<TripPlan[]>(() => load(PLANS_KEY, [] as TripPlan[]));
@@ -152,6 +154,8 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
 
   // ------------------- Hydrate from server when session ready -------------------
   const hydrate = useCallback(async (uid: string, email: string) => {
+    setHydrating(true);
+    try {
     // profile
     const { data: profile } = await supabase
       .from("profiles").select("*").eq("user_id", uid).maybeSingle();
@@ -210,6 +214,9 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
       power: `${s.power_kw}kW`,
       connector: "CCS2",
     })));
+    } finally {
+      setHydrating(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -448,7 +455,7 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return {
-      session, loadingSession, signOut: logout,
+      session, loadingSession, hydrating, signOut: logout,
       trip: { ...trip, savedPlans },
       setOrigin, setDestination, setStartSoc, setStops, addStop, removeStop,
       loadPlanFromUrl, savePlan, deletePlan, applyPlan, buildShareUrl,
@@ -458,7 +465,7 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
       notifications, unreadCount, markNotifRead, markAllNotifRead, pushNotif,
       sessions, addSession,
     };
-  }, [trip, savedPlans, wallet, legacy, user, notifications, sessions, session, loadingSession]);
+  }, [trip, savedPlans, wallet, legacy, user, notifications, sessions, session, loadingSession, hydrating]);
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;
 };
