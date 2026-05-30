@@ -18,17 +18,17 @@ declare global {
 }
 
 const SCRIPT_ID = "google-maps-js";
+let loaderPromise: Promise<void> | null = null;
 
 const loadGoogleMaps = (): Promise<void> => {
   if (window.google?.maps) return Promise.resolve();
-  const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
-  if (existing && (existing as any)._loadingPromise) {
-    return (existing as any)._loadingPromise;
-  }
+  if (loaderPromise) return loaderPromise;
   const key = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_BROWSER_KEY;
   const channel = import.meta.env.VITE_LOVABLE_CONNECTOR_GOOGLE_MAPS_TRACKING_ID;
-  const promise = new Promise<void>((resolve, reject) => {
+  loaderPromise = new Promise<void>((resolve, reject) => {
     window.__initDriverVoltMap = () => resolve();
+    const existing = document.getElementById(SCRIPT_ID) as HTMLScriptElement | null;
+    if (existing) return; // callback will fire when current script loads
     const script = document.createElement("script");
     script.id = SCRIPT_ID;
     script.async = true;
@@ -36,9 +36,8 @@ const loadGoogleMaps = (): Promise<void> => {
     script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&loading=async&callback=__initDriverVoltMap&channel=${channel}`;
     script.onerror = () => reject(new Error("Falha ao carregar Google Maps"));
     document.head.appendChild(script);
-    (script as any)._loadingPromise = promise;
   });
-  return promise;
+  return loaderPromise;
 };
 
 const statusColor: Record<Status, string> = {
