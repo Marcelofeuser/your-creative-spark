@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, Crown, Zap, Plus, ArrowUpRight, X, Sparkles, Gift, History } from "lucide-react";
 import { PageShell } from "@/components/drivervolt/PageShell";
 import { toast } from "sonner";
-import { useApp, fmtBRL, tierLabel, tierPriceCents } from "@/store/AppStore";
+import { useApp, fmtBRL, tierLabel } from "@/store/AppStore";
 import type { Tier } from "@/store/types";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
+import { useStripeCheckout } from "@/hooks/useStripeCheckout";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 interface Plan {
   id: Tier;
@@ -51,47 +53,57 @@ const plans: Plan[] = [
   },
 ];
 
-const Wallet = () => {
-  const { wallet, upgradeTier, topUp } = useApp();
-  const [selected, setSelected] = useState<Tier>(wallet.currentTier);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [topUpOpen, setTopUpOpen] = useState(false);
+const TIER_PRICE_ID: Record<Exclude<Tier, "bronze">, string> = {
+  silver: "silver_monthly",
+  gold: "gold_monthly",
+};
 
-  const topUpOptions = [
-    { value: 5000, bonus: 0 },
-    { value: 10000, bonus: 500 },
-    { value: 20000, bonus: 1500 },
-    { value: 50000, bonus: 5000 },
-  ];
+const TOPUP_OPTIONS = [
+  { value: 5000, bonus: 0, priceId: "topup_50" },
+  { value: 10000, bonus: 500, priceId: "topup_100" },
+  { value: 20000, bonus: 1500, priceId: "topup_200" },
+  { value: 50000, bonus: 5000, priceId: "topup_500" },
+] as const;
+
+const Wallet = () => {
+  const { wallet } = useApp();
+  const [selected, setSelected] = useState<Tier>(wallet.currentTier);
+  const [topUpOpen, setTopUpOpen] = useState(false);
+  const { openCheckout, closeCheckout, isOpen, checkoutElement } = useStripeCheckout();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get("checkout") === "success") {
+      toast.success("Pagamento confirmado! Atualizando saldo...");
+      const t = setTimeout(() => {
+        const next = new URLSearchParams(searchParams);
+        next.delete("checkout");
+        next.delete("session_id");
+        setSearchParams(next, { replace: true });
+        window.location.reload();
+      }, 1500);
+      return () => clearTimeout(t);
+    }
+  }, [searchParams, setSearchParams]);
 
   const current = wallet.currentTier;
 
-  const handleConfirm = async () => {
-    setProcessing(true);
-    await new Promise((r) => setTimeout(r, 700));
-    upgradeTier(selected);
-    setProcessing(false);
-    setConfirmOpen(false);
-    toast.success(`Plano atualizado para ${tierLabel[selected]} ✨`);
-  };
+  const handleTopUp = () => setTopUpOpen(true);
 
-  const handleTopUp = () => {
-    setTopUpOpen(true);
-  };
-
-  const confirmTopUp = (value: number, bonus: number) => {
-    topUp(value + bonus);
+  const startTopUp = (priceId: string) => {
     setTopUpOpen(false);
-    toast.success(
-      bonus > 0
-        ? `${fmtBRL(value)} + bônus ${fmtBRL(bonus)} creditados`
-        : `${fmtBRL(value)} adicionados ao saldo`,
-    );
+    openCheckout({ priceId });
+  };
+
+  const startUpgrade = () => {
+    if (selected === "bronze" || selected === current) return;
+    const priceId = TIER_PRICE_ID[selected as "silver" | "gold"];
+    openCheckout({ priceId });
   };
 
   return (
     <PageShell title="Carteira" subtitle="Saldo & Assinaturas">
+      <PaymentTestModeBanner />
       {/* Saldo */}
       <motion.section
         initial={{ opacity: 0, scale: 0.97 }}
@@ -212,7 +224,7 @@ const Wallet = () => {
         </div>
 
         <button
-          onClick={() => setConfirmOpen(true)}
+          onClick={startUpgrade}
           disabled={selected === current}
           className="w-full bg-gradient-aurora text-primary-foreground py-4 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-bloom transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
@@ -252,81 +264,6 @@ const Wallet = () => {
         )}
       </section>
 
-      {/* Modal Confirmação */}
-      <AnimatePresence>
-        {confirmOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] bg-background/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
-            onClick={() => !processing && setConfirmOpen(false)}
-          >
-            <motion.div
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="glass-card w-full max-w-md p-6 space-y-5"
-              role="dialog"
-              aria-modal="true"
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">Confirmar upgrade</p>
-                  <h3 className="text-xl font-light text-foreground mt-1">
-                    {tierLabel[current]} → <span className="text-primary font-semibold">{tierLabel[selected]}</span>
-                  </h3>
-                </div>
-                <button onClick={() => setConfirmOpen(false)} disabled={processing} className="text-muted-foreground hover:text-foreground">
-                  <X size={16} />
-                </button>
-              </div>
-
-              <div className="glass-card p-4 space-y-2 border-primary/20">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Cobrança imediata</span>
-                  <span className="font-mono text-foreground">{fmtBRL(tierPriceCents[selected])}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Saldo após</span>
-                  <span className="font-mono text-primary">
-                    {fmtBRL(Math.max(0, wallet.balance - tierPriceCents[selected]))}
-                  </span>
-                </div>
-              </div>
-
-              {wallet.balance < tierPriceCents[selected] && (
-                <p className="text-xs text-destructive">Saldo insuficiente. Adicione crédito antes de continuar.</p>
-              )}
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setConfirmOpen(false)}
-                  disabled={processing}
-                  className="flex-1 glass-card py-3 rounded-2xl text-sm hover:border-white/20"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleConfirm}
-                  disabled={processing || wallet.balance < tierPriceCents[selected]}
-                  className="flex-1 bg-gradient-aurora text-primary-foreground py-3 rounded-2xl text-sm font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
-                >
-                  {processing ? (
-                    <span className="size-4 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
-                  ) : (
-                    <>
-                      <Zap size={14} strokeWidth={2.5} /> Confirmar
-                    </>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Modal Top-up */}
       <AnimatePresence>
         {topUpOpen && (
@@ -354,10 +291,10 @@ const Wallet = () => {
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-2">
-                {topUpOptions.map((o) => (
+                {TOPUP_OPTIONS.map((o) => (
                   <button
                     key={o.value}
-                    onClick={() => confirmTopUp(o.value, o.bonus)}
+                    onClick={() => startTopUp(o.priceId)}
                     className={`glass-card p-4 text-left hover:border-primary/30 transition-all ${o.bonus > 0 ? "border-primary/20" : ""}`}
                   >
                     <p className="text-sm font-medium font-mono">{fmtBRL(o.value)}</p>
@@ -372,8 +309,37 @@ const Wallet = () => {
                 ))}
               </div>
               <p className="text-[10px] text-muted-foreground italic text-center">
-                Pagamento via Pix instantâneo (mock).
+                Pagamento seguro via cartão (Stripe).
               </p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Stripe Embedded Checkout */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[70] bg-background/90 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto"
+          >
+            <motion.div
+              initial={{ y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 40, opacity: 0 }}
+              className="glass-card w-full max-w-xl my-8 p-4 space-y-3"
+              role="dialog"
+              aria-modal="true"
+            >
+              <div className="flex justify-between items-center">
+                <p className="text-sm font-medium">Pagamento</p>
+                <button onClick={closeCheckout} className="text-muted-foreground hover:text-foreground">
+                  <X size={16} />
+                </button>
+              </div>
+              {checkoutElement}
             </motion.div>
           </motion.div>
         )}
