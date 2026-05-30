@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Wrench, ScanLine, FileText, AlertTriangle, Calendar, Gauge, Droplet, CircleDot, Camera, Check } from "lucide-react";
 import { PageShell } from "@/components/drivervolt/PageShell";
 import { toast } from "sonner";
+import { SmartcarConnect } from "@/components/SmartcarConnect";
 
 interface MaintItem {
   id: string;
@@ -57,6 +58,14 @@ const Cockpit = () => {
 
   return (
     <PageShell title="Central do Condutor" subtitle="Life Cycle Management">
+      {/* Telemetria OBD-II via Smartcar */}
+      <section className="space-y-3" aria-labelledby="smartcar-heading">
+        <h2 id="smartcar-heading" className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground px-1">
+          Telemetria do veículo
+        </h2>
+        <SmartcarConnect />
+      </section>
+
       {/* Manutenção */}
       <section className="space-y-3" aria-labelledby="maint-heading">
         <h2 id="maint-heading" className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground px-1">

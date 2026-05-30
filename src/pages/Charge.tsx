@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { QrCode, Nfc, CreditCard, Plus, Trash2, Zap, Shield, X, Check } from "lucide-react";
+import { QrCode, Nfc, CreditCard, Plus, Trash2, Zap, Shield, X, Check, Cpu, ArrowUpRight } from "lucide-react";
 import { PageShell } from "@/components/drivervolt/PageShell";
 import { toast } from "sonner";
 import { useApp, fmtBRL } from "@/store/AppStore";
+import { Link } from "react-router-dom";
 
 type Method = "qr" | "nfc" | "tag";
 
@@ -93,6 +94,23 @@ const Charge = () => {
         </div>
         <Shield size={16} className="text-primary" />
       </section>
+
+      {/* Atalho para simulador OCPP */}
+      <Link
+        to="/ocpp"
+        className="glass-card p-4 flex items-center justify-between hover:border-primary/30 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="size-10 rounded-xl bg-primary/15 border border-primary/30 flex items-center justify-center">
+            <Cpu size={14} className="text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-medium">Simulador OCPP 1.6J</p>
+            <p className="text-[10px] font-mono text-muted-foreground">Emula comunicação charger ↔ CSMS</p>
+          </div>
+        </div>
+        <ArrowUpRight size={14} className="text-primary" />
+      </Link>
 
       {/* Seletor de método */}
       <section className="grid grid-cols-3 gap-2">

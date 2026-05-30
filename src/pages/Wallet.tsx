@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, Crown, Zap, Plus, ArrowUpRight, X, Sparkles, Gift, History } from "lucide-react";
+import { Check, Crown, Zap, Plus, ArrowUpRight, X, Sparkles, Gift, History, Loader2, AlertCircle } from "lucide-react";
 import { PageShell } from "@/components/drivervolt/PageShell";
 import { toast } from "sonner";
 import { useApp, fmtBRL, tierLabel } from "@/store/AppStore";
@@ -74,15 +74,12 @@ const Wallet = () => {
 
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
-      toast.success("Pagamento confirmado! Atualizando saldo...");
-      const t = setTimeout(() => {
-        const next = new URLSearchParams(searchParams);
-        next.delete("checkout");
-        next.delete("session_id");
-        setSearchParams(next, { replace: true });
-        window.location.reload();
-      }, 1500);
-      return () => clearTimeout(t);
+      toast.success("Pagamento enviado! Aguardando confirmação...");
+      const next = new URLSearchParams(searchParams);
+      next.delete("checkout");
+      next.delete("session_id");
+      setSearchParams(next, { replace: true });
+      // Realtime cuidará da atualização do saldo/status — sem reload
     }
   }, [searchParams, setSearchParams]);
 
@@ -246,13 +243,27 @@ const Wallet = () => {
         ) : (
           <div className="glass-card divide-y divide-border/50 overflow-hidden">
             {wallet.transactions.slice(0, 8).map((tx) => (
-              <div key={tx.id} className="flex items-center justify-between p-4">
-                <div>
-                  <p className="text-sm text-foreground">{tx.title}</p>
+              <div key={tx.id} className="flex items-center justify-between p-4 gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-foreground truncate">{tx.title}</p>
+                    {tx.status === "pending" && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 flex-shrink-0">
+                        <Loader2 size={8} className="animate-spin" /> Processando
+                      </span>
+                    )}
+                    {tx.status === "failed" && (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded-full bg-destructive/15 text-destructive border border-destructive/30 flex-shrink-0">
+                        <AlertCircle size={8} /> Falhou
+                      </span>
+                    )}
+                  </div>
                   <p className="text-[10px] text-muted-foreground font-mono mt-0.5">{tx.date}</p>
                 </div>
                 <span
-                  className={`text-sm font-mono tabular-nums ${
+                  className={`text-sm font-mono tabular-nums flex-shrink-0 ${
+                    tx.status === "failed" ? "text-destructive/70 line-through" :
+                    tx.status === "pending" ? "text-muted-foreground" :
                     tx.sign === "in" ? "text-primary" : "text-foreground/80"
                   }`}
                 >
@@ -260,6 +271,12 @@ const Wallet = () => {
                 </span>
               </div>
             ))}
+            <Link
+              to="/history"
+              className="block p-3 text-center text-[10px] font-mono uppercase tracking-widest text-primary hover:bg-primary/5 transition-colors"
+            >
+              Ver histórico completo →
+            </Link>
           </div>
         )}
       </section>

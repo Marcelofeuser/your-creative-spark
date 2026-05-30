@@ -86,6 +86,51 @@ export type Database = {
         }
         Relationships: []
       }
+      smartcar_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string
+          id: string
+          make: string | null
+          mode: string
+          model: string | null
+          refresh_token: string
+          updated_at: string
+          user_id: string
+          vehicle_id: string
+          year: number | null
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          make?: string | null
+          mode?: string
+          model?: string | null
+          refresh_token: string
+          updated_at?: string
+          user_id: string
+          vehicle_id: string
+          year?: number | null
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          make?: string | null
+          mode?: string
+          model?: string | null
+          refresh_token?: string
+          updated_at?: string
+          user_id?: string
+          vehicle_id?: string
+          year?: number | null
+        }
+        Relationships: []
+      }
       vehicles: {
         Row: {
           battery_kwh: number
