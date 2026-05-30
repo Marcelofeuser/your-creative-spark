@@ -232,6 +232,26 @@ export const AppStoreProvider = ({ children }: { children: ReactNode }) => {
     hydrate(session.user.id, session.user.email ?? "");
   }, [session, hydrate]);
 
+  // Realtime: reage a mudanças de status / saldo (pending → confirmed)
+  useEffect(() => {
+    if (!session) return;
+    const uid = session.user.id;
+    const channel = supabase
+      .channel(`wallet:${uid}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "wallet_transactions", filter: `user_id=eq.${uid}` },
+        () => hydrate(uid, session.user.email ?? ""),
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "wallet_balances", filter: `user_id=eq.${uid}` },
+        () => hydrate(uid, session.user.email ?? ""),
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [session, hydrate]);
+
   // ------------------- Persist trip/legacy/notif locally -------------------
   useEffect(() => { localStorage.setItem(TRIP_KEY, JSON.stringify({ ...trip, savedPlans: undefined })); }, [trip]);
   useEffect(() => { localStorage.setItem(PLANS_KEY, JSON.stringify(savedPlans)); }, [savedPlans]);
