@@ -5,6 +5,7 @@ import { PageShell } from "@/components/drivervolt/PageShell";
 import { toast } from "sonner";
 import { useApp } from "@/store/AppStore";
 import { GoogleStationsMap } from "@/components/drivervolt/GoogleStationsMap";
+import { supabase } from "@/integrations/supabase/client";
 
 type Status = "available" | "occupied" | "maintenance";
 type Connector = "CCS2" | "Type 2" | "CHAdeMO";
@@ -25,7 +26,7 @@ interface Pin {
   wait: string;
 }
 
-const pins: Pin[] = [
+const fallbackPins: Pin[] = [
   { id: "p1", name: "Verdant Point", address: "Av. Paulista, 1500", lat: -23.5613, lng: -46.6565, status: "available", power: 350, connector: "CCS2", distance: "1.2km", price: "R$ 2,40", available: 6, total: 8, wait: "~4 min" },
   { id: "p2", name: "Aether Hub", address: "R. Augusta, 2200", lat: -23.5556, lng: -46.6629, status: "occupied", power: 150, connector: "CCS2", distance: "4.8km", price: "R$ 1,95", available: 0, total: 4, wait: "~18 min" },
   { id: "p3", name: "Eletra Ibirapuera", address: "Pq. Ibirapuera, Pte 3", lat: -23.5874, lng: -46.6576, status: "available", power: 300, connector: "Type 2", distance: "6.4km", price: "R$ 2,10", available: 4, total: 6, wait: "imediato" },
@@ -53,6 +54,8 @@ const MapPage = () => {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef<any>(null);
+  const [pins, setPins] = useState<Pin[]>(fallbackPins);
+  const [loadingStations, setLoadingStations] = useState(false);
 
   const startVoice = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -107,6 +110,28 @@ const MapPage = () => {
       { timeout: 5000 }
     );
   }, []);
+
+  // Busca eletropostos reais via Google Places (gateway)
+  useEffect(() => {
+    const center = userLocation ?? { lat: -23.5631, lng: -46.6544 };
+    let cancelled = false;
+    setLoadingStations(true);
+    supabase.functions
+      .invoke("nearby-stations", { body: { lat: center.lat, lng: center.lng, radius: 8000 } })
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        setLoadingStations(false);
+        if (error || !data?.pins?.length) {
+          if (error) toast.error("Não foi possível carregar estações reais — exibindo demo");
+          return;
+        }
+        setPins(data.pins as Pin[]);
+        setSelectedId(data.pins[0]?.id ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userLocation]);
 
   const statusColor = (s: Status) =>
     s === "available" ? "bg-primary shadow-bloom" : s === "occupied" ? "bg-warning" : "bg-destructive";
@@ -267,7 +292,7 @@ const MapPage = () => {
         </div>
 
         <div className="absolute bottom-3 left-3 text-[10px] font-mono text-muted-foreground glass-card px-2.5 py-1 z-10 pointer-events-none">
-          {filtered.length} de {pins.length}
+          {loadingStations ? "buscando…" : `${filtered.length} de ${pins.length}`}
         </div>
       </motion.section>
 
