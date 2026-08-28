@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.17"
   }
   public: {
     Tables: {
@@ -53,6 +53,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          read: boolean
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          read?: boolean
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -81,6 +114,36 @@ export type Database = {
           high_contrast?: boolean
           id?: string
           phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      rfid_tags: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          label: string
+          serial: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          serial: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          serial?: string
           updated_at?: string
           user_id?: string
         }
@@ -128,6 +191,66 @@ export type Database = {
           user_id?: string
           vehicle_id?: string
           year?: number | null
+        }
+        Relationships: []
+      }
+      smartcar_oauth_states: {
+        Row: {
+          created_at: string
+          expires_at: string
+          redirect_uri: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          redirect_uri: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          redirect_uri?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trip_plans: {
+        Row: {
+          created_at: string
+          destination: string
+          id: string
+          name: string
+          origin: string
+          start_soc: number
+          stops: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          destination: string
+          id?: string
+          name: string
+          origin: string
+          start_soc?: number
+          stops?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          id?: string
+          name?: string
+          origin?: string
+          start_soc?: number
+          stops?: Json
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
